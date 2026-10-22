@@ -1,0 +1,38 @@
+flowchart TD
+    IN(["🎯 PlanChatService 准备目标"]) --> INPUT["原问题与服务端解析 libraryKeys<br/>可选只读近期历史、摘要与偏好"]
+    INPUT --> CATALOG["仅保留当前技能允许的能力<br/>plannerVisible 且 READ_ONLY"]
+    CATALOG --> EMPTY{"可规划目录为空"}
+    EMPTY -->|"是"| FAIL["终止规划并返回安全失败"]
+    EMPTY -->|"否"| PROMPT["传能力 key、输入输出 Schema<br/>用户目标与剩余步骤上限"]
+    PROMPT --> RESERVE["扣模型调用与 Token 估算预算<br/>检查取消和时间"]
+    RESERVE --> MODEL["🧠 PlannerAgent<br/>模型只生成 ExecutionPlan JSON"]
+    MODEL --> BASIC["检查 goal、steps、唯一 stepId<br/>步骤数量不超过剩余预算"]
+    BASIC --> AUTH["检查能力存在、已授权、可规划且只读"]
+    AUTH --> DAG["检查依赖存在、不自依赖、不重复<br/>无循环依赖"]
+    DAG --> BIND["检查目标字段、来源路径、基础类型<br/>必填字段与显式上游依赖"]
+    BIND --> RAG["RAG libraryKeys 只来自 USER_INPUT<br/>禁止绑定 conversationId"]
+    RAG --> REPLAN{"是否重规划"}
+    REPLAN -->|"是"| KEEP["已成功步骤必须原样保留<br/>只按待执行步骤计剩余预算"]
+    REPLAN -->|"否"| OK["返回合法计划 → 09 执行"]
+    KEEP --> OK
+    BASIC -. 确定性错误 .-> RETRY{"本轮是否尚未修复"}
+    AUTH -. 错误 .-> RETRY
+    DAG -. 错误 .-> RETRY
+    BIND -. 错误 .-> RETRY
+    RAG -. 错误 .-> RETRY
+    KEEP -. 错误 .-> RETRY
+    MODEL -. JSON 格式错误 .-> RETRY
+    RETRY -->|"是"| FIX["把校验错误作为数据反馈<br/>最多追加一次生成修复"]
+    FIX --> RESERVE
+    RETRY -->|"否"| FAIL
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class INPUT,CATALOG,PROMPT,RESERVE,BASIC,AUTH,DAG,BIND,RAG,KEEP,FIX process
+    class MODEL model
+    class EMPTY,REPLAN,RETRY decision
+    class OK data
+    class FAIL failure

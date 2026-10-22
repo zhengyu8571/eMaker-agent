@@ -1,0 +1,28 @@
+server:
+  port: 8083
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: search-service
+tj:
+  swagger:
+    enable: true
+    package-path: com.tianji.search.controller
+    title: 天机学堂 - 搜索系统接口文档
+    description: 该服务包含课程搜索、兴趣推荐等相关功能
+    contact-name: eMaker Agent Showcase
+    contact-url: https://example.com
+    contact-email: maintainer@example.com
+    version: v1.0
+    enableResponseWrap: true
+  auth:
+    resource:
+      enable: true
+      includeLoginPaths:
+      - /interests/**
+      - /courses/admin
+  jdbc:
+    database: tj_search

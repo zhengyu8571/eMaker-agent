@@ -1,0 +1,36 @@
+server:
+  port: 8087
+  tomcat:
+    uri-encoding: UTF-8
+  error:
+    include-message: always
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: pay-service
+tj:
+  swagger:
+    enable: true
+    enableResponseWrap: true
+    package-path: com.tianji.pay.controller
+    title: 天机学堂 - 支付中心接口文档
+    description: 该服务提供微信、支付宝等各种平台的支付、退款等功能
+    contact-name: eMaker Agent Showcase
+    contact-url: https://example.com
+    contact-email: maintainer@example.com
+    version: v1.0
+  jdbc:
+    database: tj_pay
+  pay:
+    notifyHost: ${SHOWCASE_TJ_PAY_NOTIFYHOST}
+    ali:
+      appId: ${SHOWCASE_TJ_PAY_ALI_APPID}
+      merchantPrivateKey: ${SHOWCASE_TJ_PAY_ALI_MERCHANTPRIVATEKEY}
+      publicKey: ${SHOWCASE_TJ_PAY_ALI_PUBLICKEY}
+    wx:
+      appId: ${SHOWCASE_TJ_PAY_WX_APPID}
+      mchId: ${SHOWCASE_TJ_PAY_WX_MCHID}
+      mchSerialNo: ${SHOWCASE_TJ_PAY_WX_MCHSERIALNO}
+      privateKey: ${SHOWCASE_TJ_PAY_WX_PRIVATEKEY}
+      apiV3Key: ${SHOWCASE_TJ_PAY_WX_APIV3KEY}

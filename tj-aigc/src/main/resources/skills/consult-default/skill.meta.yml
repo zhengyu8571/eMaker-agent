@@ -1,0 +1,9 @@
+displayName: 默认课程咨询
+default: true
+knowledge-base-keys: []
+allowed-tools:
+- searchCourseCandidate
+- queryCourseById
+allowed-mcp-servers: []
+reflection-enabled: false
+references: []

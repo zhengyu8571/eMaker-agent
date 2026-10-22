@@ -1,0 +1,34 @@
+flowchart TD
+    CALL(["⚙️ AgentRuntime.invoke"]) --> ARG["校验上下文与调用参数<br/>生成 invocationId"]
+    ARG --> AUTH{"能力已注册且在<br/>本次能力白名单内"}
+    AUTH -->|"否"| DENY["ACCESS_DENIED<br/>拒绝能力调用"]
+    AUTH -->|"是"| STOP["检查取消令牌"]
+    STOP --> BUDGET["扣步骤、调用与输入 Token 估算预算"]
+    BUDGET --> TIME["取能力超时与运行剩余时间的较小值"]
+    TIME --> THREAD["专用能力线程池提交任务<br/>显式传 request/session/user/skill"]
+    THREAD --> AGAIN["DefaultCapabilityInvoker<br/>重新按 Skill 解析并 require 能力"]
+    AGAIN --> INPUT["CapabilityInputValidator<br/>校验运行期结构化输入"]
+    INPUT --> EXEC["Capability.execute<br/>RAG、本地工具或 MCP"]
+    EXEC --> WAIT["Future 等待<br/>最多每 100ms 检查取消与截止"]
+    WAIT --> OK{"成功且尚未取消"}
+    OK -->|"是"| EV["记录脱敏输入、结果、耗时<br/>汇聚可信来源"]
+    EV --> SUCCESS["返回 success 与证据快照"]
+    OK -->|"否"| FAIL["映射稳定失败码<br/>超时、取消、预算、输入或执行失败"]
+    DENY --> RESULT["返回失败结果<br/>可记录路径保存失败证据"]
+    FAIL --> RESULT
+    STOP -. 已取消 .-> FAIL
+    BUDGET -. 预算不足 .-> FAIL
+    THREAD -. 队列拒绝 .-> FAIL
+    WAIT -. 取消或超时 .-> CANCEL["future.cancel true<br/>请求中断底层任务"]
+    CANCEL --> FAIL
+    FREEZE["运行结束时 freeze"] -. 拒绝迟到证据 .-> EV
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class ARG,STOP,BUDGET,TIME,THREAD,AGAIN,INPUT,EXEC,WAIT,EV process
+    class SUCCESS,RESULT,FREEZE data
+    class AUTH,OK decision
+    class DENY,FAIL,CANCEL failure

@@ -1,0 +1,32 @@
+# Build and IDE
+**/target/
+**/build/
+*.class
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+**/application-private.yml
+**/application-private.yaml
+config/keys/*
+!config/keys/README.md
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key
+# Runtime data
+/logs/
+**/logs/
+*.log
+/uploads/
+/tmp/
+/data/
+__pycache__/
+*.pyc
+*.zip

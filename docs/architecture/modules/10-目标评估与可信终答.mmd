@@ -1,0 +1,38 @@
+flowchart TD
+    IN(["🎯 AgentLoop 执行一轮后"]) --> PROMPT["摘取目标、计划、步骤状态与脱敏证据"]
+    PROMPT --> EVAL["🧠 GoalEvaluator<br/>判断证据是否足够完成目标"]
+    EVAL --> CHECK{"模型声称完成且<br/>实际存在未成功步骤"}
+    CHECK -->|"是"| FORCE["强制未完成<br/>允许提出重规划"]
+    CHECK -->|"否"| RESULT["采用语义评估结果"]
+    FORCE --> NEED{"未完成且 shouldReplan"}
+    RESULT --> NEED
+    NEED -->|"是"| BUDGET["Replanner.replan<br/>扣减重规划预算后生成新计划"]
+    BUDGET --> RESUME["08 校验新计划 → 09 resume<br/>复用原样成功步骤"]
+    BUDGET -. 重规划预算耗尽 .-> FAIL
+    RESUME --> PROMPT
+    NEED -->|"否"| FREEZE["PlanChatService 冻结证据<br/>取消后不再生成终答"]
+    FREEZE --> DONE{"目标 completed"}
+    DONE -->|"否"| GAP["固定说明未完成目标与缺口<br/>不附不完整来源"]
+    DONE -->|"是"| GEN["🧠 FinalAnswerComposer<br/>仅用目标、计划、评估、可信证据"]
+    GEN --> CIT{"答案非空且引用合法"}
+    CIT -->|"否"| ONCE{"尚未修复过"}
+    ONCE -->|"是"| FIX["只修复引用格式和受影响表达<br/>不重新检索或造来源"]
+    FIX --> GEN
+    ONCE -->|"否"| FAIL["安全失败提示<br/>不保存为成功回答"]
+    CIT -->|"是"| ANSWER["保留答案实际使用的来源"]
+    ANSWER --> SAVE["检查尚未断流或取消<br/>一次保存原问题与最终文本"]
+    GAP --> SAVE
+    SAVE --> ENH["仅 completed 的终答进入增强记忆"]
+    ENH --> EVENTS["DATA → 可选来源 PARAM → STOP<br/>释放运行与临时结果"]
+    FAIL --> EVENTS
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class PROMPT,FORCE,RESULT,BUDGET,RESUME,FREEZE,FIX,SAVE,ENH,EVENTS process
+    class EVAL,GEN model
+    class CHECK,NEED,DONE,CIT,ONCE decision
+    class ANSWER data
+    class GAP,FAIL failure

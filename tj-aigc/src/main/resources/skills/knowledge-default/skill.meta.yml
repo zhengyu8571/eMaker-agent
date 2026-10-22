@@ -1,0 +1,7 @@
+displayName: 默认知识讲解
+default: true
+knowledge-base-keys: []
+allowed-tools: []
+allowed-mcp-servers: []
+reflection-enabled: false
+references: []

@@ -1,0 +1,8 @@
+displayName: 默认课程购买
+default: true
+knowledge-base-keys: []
+allowed-tools:
+- prePlaceOrder
+allowed-mcp-servers: []
+reflection-enabled: false
+references: []

@@ -1,0 +1,8 @@
+displayName: MCP综合学习规划
+default: false
+knowledge-base-keys: []
+allowed-tools: []
+allowed-mcp-servers:
+- tianji-course
+reflection-enabled: false
+references: []

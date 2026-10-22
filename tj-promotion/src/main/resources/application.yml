@@ -1,0 +1,33 @@
+server:
+  port: 8092
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: promotion-service
+tj:
+  swagger:
+    enable: true
+    enableResponseWrap: true
+    package-path: com.tianji.promotion.controller
+    title: 天机课堂 - 促销中心接口文档
+    description: 该服务包含优惠促销有关的功能
+    contact-name: eMaker Agent Showcase
+    contact-url: https://example.com
+    contact-email: maintainer@example.com
+    version: v1.0
+  jdbc:
+    database: tj_promotion
+  auth:
+    resource:
+      enable: true
+  mq:
+    listener:
+      retry:
+        stateless: false
+  promotion:
+    aes:
+      key: tjxt-test-key-in
+      iv: tjxt-test-ivinit

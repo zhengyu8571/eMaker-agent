@@ -1,0 +1,21 @@
+spring:
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+      username: nacos
+      password: ${NACOS_PASSWORD}
+      discovery:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
+        ip: ${SERVICE_IP:127.0.0.1}
+  config:
+    import:
+    - nacos:${spring.application.name}.yaml
+    - nacos:shared-spring.yaml
+    - nacos:shared-redis.yaml
+    - nacos:shared-logs.yaml
+    - nacos:shared-feign.yaml
+    - nacos:shared-mybatis.yaml
+    - nacos:shared-mq.yaml
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URI:http://127.0.0.1:9200}

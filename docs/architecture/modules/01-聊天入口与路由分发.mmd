@@ -1,0 +1,31 @@
+flowchart TD
+    U(["👤 POST /ais/chat"]) --> GW["网关去掉 ais 前缀<br/>ChatController.chat"]
+    GW --> TR["debugTrace.stream<br/>关联本次请求流水"]
+    TR --> CTX["可用时读取只读历史、摘要和偏好<br/>仅辅助路由"]
+    CTX --> LLM["🧠 RouteAgent.route<br/>业务目录与技能目录 → JSON"]
+    LLM --> VALID{"缺字段、非法模式<br/>或解析失败"}
+    VALID -->|"是"| CL["固定澄清提示<br/>保存问答记忆 → DATA、STOP"]
+    VALID -->|"否"| CONF{"需澄清、低置信度<br/>或目标 Agent 未注册"}
+    CONF -->|"是"| CL
+    CONF -->|"否"| DISP["RequestDispatcher.dispatch<br/>仍传用户原始问题"]
+    DISP --> SK{"技能开关开启"}
+    SK -->|"否"| OLD["旧版 Agent.processStream<br/>不创建运行上下文"]
+    SK -->|"是"| RES["SkillRegistry.resolve<br/>校验 Agent 归属或回退默认技能"]
+    RES --> ON{"运行时开启"}
+    ON -->|"否"| MID["带 Skill 的旧调用链"]
+    ON -->|"是"| CREATE["创建身份、能力、预算、取消和证据上下文<br/>注册活动 runId"]
+    CREATE --> MODE{"PLAN 模式且规划开启"}
+    MODE -->|"否"| DIRECT["进入 03 DIRECT"]
+    MODE -->|"是"| PLAN["进入 08 PLAN"]
+    CREATE -. 同步组装异常 .-> CLEAN["冻结证据并删除活动运行<br/>异常交回入口边界"]
+    CLEAN --> CL
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class GW,TR,CTX,DISP,RES,CREATE,DIRECT,PLAN,OLD,MID process
+    class LLM model
+    class VALID,CONF,SK,ON,MODE decision
+    class CL,CLEAN failure

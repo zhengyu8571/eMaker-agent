@@ -1,0 +1,39 @@
+flowchart TD
+    IN(["💾 一轮正式问答完成"]) --> BASE["正式 ChatMemory 保留对话<br/>与增强存储分离"]
+    BASE --> ACCEPT{"增强开启且身份与问答有效"}
+    ACCEPT -->|"否"| END["返回，不影响已完成聊天"]
+    ACCEPT -->|"是"| TURN["限制问题和回答大小<br/>建立带 turnId 与 occurredAt 的 Turn"]
+    TURN --> APPEND["CAS 追加待整理轮次<br/>同 turnId 去重"]
+    APPEND --> QUEUE["按用户与会话去重调度<br/>有界后台线程池"]
+    QUEUE --> SNAP["读取当前 Conversation 快照"]
+    SNAP --> WORK{"存在待提取偏好<br/>或达到摘要阈值"}
+    WORK -->|"否"| END
+    WORK -->|"是"| BATCH["选择偏好候选与较早摘要轮次<br/>保留近期原文并限制模型输入"]
+    BATCH --> MODEL["🧠 记忆模型<br/>生成摘要和偏好变更候选"]
+    MODEL --> VERIFY["校验摘要长度和偏好字段<br/>原话必须来自对应用户发言"]
+    VERIFY --> FILTER["拒绝假设、敏感、临时或非本人事实<br/>按 occurredAt 与 forgottenAt 排除过期结果"]
+    FILTER --> CURRENT["提交前重读会话和用户 Profile"]
+    CURRENT --> SAFE{"generation、摘要与<br/>原前缀仍符合快照"}
+    SAFE -->|"否"| DISCARD["丢弃过时结果<br/>防止清除后的旧任务写回"]
+    DISCARD --> END
+    SAFE -->|"是"| CAS["Redis Lua 双键版本比较<br/>原子提交摘要、轮次标记与偏好"]
+    CAS --> OK{"提交成功"}
+    OK -->|"冲突"| CURRENT
+    OK -->|"是"| AGAIN["每次调度最多处理四批<br/>健康且有积压时再调度"]
+    AGAIN --> SNAP
+    MODEL -. 超时或后台故障 .-> KEEP["保留待处理轮次<br/>等待后续成功聊天触发"]
+    CAS -. 有限重合并仍失败 .-> KEEP
+    KEEP --> END
+    BASE -. 提供近期原文 .-> READ["下次请求读取历史、摘要与偏好<br/>增强内容作为低信任参考"]
+    CAS -. 提供增强上下文 .-> READ
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class BASE,TURN,APPEND,QUEUE,SNAP,BATCH,VERIFY,FILTER,CURRENT,CAS,AGAIN,READ process
+    class MODEL model
+    class ACCEPT,WORK,SAFE,OK decision
+    class DISCARD,KEEP failure
+    class END data

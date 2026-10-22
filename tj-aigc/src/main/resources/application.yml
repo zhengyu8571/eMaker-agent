@@ -1,0 +1,176 @@
+server:
+  port: 8094
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: aigc-service
+  rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        prefetch: 1
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 4
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 10s
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 52MB
+  main:
+    allow-circular-references: true
+tj:
+  swagger:
+    enable: true
+    package-path: com.tianji.aigc.controller
+    title: 天机学堂 - AIGC接口文档
+    description: 该服务包含AI相关功能
+    contact-name: eMaker Agent Showcase
+    contact-url: https://example.com
+    contact-email: maintainer@example.com
+    version: v1.0
+    enableResponseWrap: true
+  auth:
+    resource:
+      enable: true
+  jdbc:
+    database: tj_aigc
+  ai:
+    debug-trace:
+      enabled: false
+      directory: logs/ai-debug
+    mcp:
+      server:
+        enabled: false
+        token: ${TJ_MCP_COURSE_TOKEN:}
+      client:
+        enabled: false
+        initialization-timeout: 3s
+        request-timeout: 15s
+        initial-backoff: 1s
+        max-backoff: 30s
+        max-response-chars: 200000
+        servers:
+          tianji-course:
+            enabled: true
+            url: ${TJ_MCP_COURSE_URL:http://127.0.0.1:8094}
+            sse-endpoint: /ais/mcp/sse
+            token: ${TJ_MCP_COURSE_TOKEN:}
+            allowed-tools:
+            - searchCourseCandidate
+            - queryCourseById
+    planner:
+      enabled: false
+    skill:
+      enabled: true
+    runtime:
+      enabled: true
+      max-steps: 20
+      max-model-calls: 8
+      max-replans: 1
+      max-tool-calls: 12
+      max-tokens: 32000
+      timeout: 2m
+      core-pool-size: 4
+      max-pool-size: 16
+      queue-capacity: 100
+    prompt:
+      system:
+        route-agent:
+          data-id: route-agent-system-message.txt
+        recommend-agent:
+          data-id: recommend-agent-system-message.txt
+        buy-agent:
+          data-id: buy-agent-system-message.txt
+        consult-agent:
+          data-id: consult-agent-system-message.txt
+        knowledge-agent:
+          data-id: knowledge-agent-system-message.txt
+        query-rewrite:
+          data-id: query-rewrite-system-message.txt
+        text:
+          data-id: text-system-chat-message.txt
+    routing:
+      min-confidence: 0.65
+    knowledge:
+      parsing:
+        max-file-size: 50MB
+        max-text-length: 5242880
+        allowed-extensions:
+        - pdf
+        - docx
+        - md
+        - markdown
+        - txt
+      chunking:
+        chunk-size: 800
+        overlap: 80
+        max-chunks: 10000
+      messaging:
+        confirm-timeout: 5s
+        retry-fixed-delay: 30000
+        retry-batch-size: 50
+      indexing:
+        batch-size: 10
+        bm25-index-name: aigc_knowledge_chunk
+      retrieval:
+        query-rewrite:
+          enabled: true
+          history-messages: 6
+          max-history-chars: 4000
+          max-question-chars: 2000
+        vector-recall:
+          top-k: 12
+          similarity-threshold: 0.6
+        bm25-recall:
+          top-k: 12
+        parallel-recall:
+          timeout: 3s
+          core-pool-size: 4
+          max-pool-size: 8
+          queue-capacity: 100
+        rrf:
+          rank-constant: 60
+          top-k: 12
+        rerank:
+          enabled: true
+          model: gte-rerank-v2
+          top-n: 8
+          timeout: 5s
+        context:
+          max-tokens: 4000
+          min-rerank-score: 0.2
+        agent-scope:
+          library-keys: []
+    memory:
+      max: 100
+      enhanced:
+        enabled: true
+        summary-threshold-turns: 12
+        recent-turns: 6
+        summary-batch-turns: 12
+        preference-batch-turns: 6
+        max-pending-turns: 100
+        max-turn-chars: 12000
+        max-summary-chars: 3000
+        max-preference-chars: 300
+        max-model-input-chars: 64000
+        max-recent-context-chars: 6000
+        timeout: 10s
+        retention: 90d
+    audio-type: DASHSCOPE
+  ali:
+    oss:
+      endpoint: ${ALI_OSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
+      access-id: ${ALI_OSS_ACCESS_ID}
+      access-key: ${ALI_OSS_ACCESS_KEY}
+      bucket: ${ALI_OSS_BUCKET}

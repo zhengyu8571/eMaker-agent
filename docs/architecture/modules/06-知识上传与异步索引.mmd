@@ -1,0 +1,36 @@
+flowchart TD
+    U(["📄 上传知识文档"]) --> VALID["校验文件、知识库和大小<br/>计算哈希与对象存储 key"]
+    VALID --> OSS["FileStorage 上传原文件到 OSS"]
+    OSS --> DB["短事务：保存文档与任务<br/>UPLOADED、PENDING、版本快照"]
+    DB --> RESP["HTTP 返回 documentId 与 taskId<br/>此时尚未完成向量化"]
+    DB --> EVENT["事务提交后处理任务创建事件"]
+    EVENT --> PUB["Publisher 发持久化 taskId 消息<br/>等待 Broker ACK 与路由检查"]
+    PUB --> SENT["确认后记录 messageId、sentAt"]
+    PUB -. 未确认 .-> PENDING["保留未发送 PENDING<br/>定时扫描补发"]
+    PENDING --> PUB
+    PUB --> CONSUME["Broker 异步交付，Consumer.consume → index<br/>携带 Broker 重投标记"]
+    CONSUME --> CLAIM{"条件抢占任务成功"}
+    CLAIM -->|"否"| SKIP["幂等退出，不重复索引"]
+    CLAIM -->|"是"| VERSION["核对文档 currentTaskId 与版本<br/>从 OSS 下载原文件"]
+    VERSION --> CHUNK["解析、清洗、按章节和 Token 切块<br/>生成稳定 chunkId 与精确 ID 元数据"]
+    CHUNK --> BATCH["分批处理<br/>每批不超过模型接口限制"]
+    BATCH --> ES["先 Elasticsearch upsert"]
+    ES --> VECTOR["再 Embedding → Redis 向量索引"]
+    VECTOR --> PROGRESS["两边成功才累计 processedChunks"]
+    PROGRESS --> NEXT{"仍有未写入分块"}
+    NEXT -->|"是"| BATCH
+    NEXT -->|"否"| DONE["任务完成<br/>文档置 INDEXED"]
+    CHUNK -. 解析或写入异常 .-> FAIL["清理本轮尝试写入的双索引分块<br/>记录 RETRY 或 FAILED 并抛回 MQ"]
+    ES -. 异常 .-> FAIL
+    VECTOR -. 异常 .-> FAIL
+    DB -. 保存失败 .-> DELETE["上传层补偿删除 OSS 原文件"]
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class VALID,OSS,DB,EVENT,PUB,SENT,CONSUME,VERSION,CHUNK,BATCH,ES,VECTOR,PROGRESS process
+    class CLAIM,NEXT decision
+    class RESP,DONE data
+    class PENDING,SKIP,FAIL,DELETE failure

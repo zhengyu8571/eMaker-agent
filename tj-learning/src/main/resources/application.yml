@@ -1,0 +1,27 @@
+server:
+  port: 8090
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: learning-service
+tj:
+  swagger:
+    enable: true
+    enableResponseWrap: true
+    package-path: com.tianji.learning.controller
+    title: 天机学堂 - 学习中心接口文档
+    description: 该服务包含用户学习的各种辅助功能
+    contact-name: eMaker Agent Showcase
+    contact-url: https://example.com
+    contact-email: maintainer@example.com
+    version: v1.0
+  jdbc:
+    database: tj_learning
+  auth:
+    resource:
+      enable: false
+  ai:
+    user-id: 9999

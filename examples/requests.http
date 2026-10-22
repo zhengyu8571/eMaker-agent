@@ -1,0 +1,27 @@
+@baseUrl = http://127.0.0.1:10010
+@token = replace-with-your-demo-login-token
+@sessionId = replace-with-a-new-session-id
+
+### 新建会话：从回包中获取新 sessionId
+POST {{baseUrl}}/ais/session
+Authorization: {{token}}
+
+### DIRECT 知识问答：需先自行准备测试知识库与示例资料
+POST {{baseUrl}}/ais/chat
+Authorization: {{token}}
+Content-Type: application/json
+Accept: text/event-stream
+
+{"sessionId":"{{sessionId}}","question":"请根据已上传资料解释 Java 泛型，并给出引用来源。"}
+
+### PLAN：需要开启规划，并准备对应技能允许的知识库、课程和工具
+POST {{baseUrl}}/ais/chat
+Authorization: {{token}}
+Content-Type: application/json
+Accept: text/event-stream
+
+{"sessionId":"{{sessionId}}","question":"请结合知识库说明 Java 泛型学习路径，并查询现有课程资料，整理一个学习建议。"}
+
+### 停止当前演示运行
+POST {{baseUrl}}/ais/chat/stop?sessionId={{sessionId}}
+Authorization: {{token}}

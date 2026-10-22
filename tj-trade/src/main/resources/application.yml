@@ -1,0 +1,27 @@
+server:
+  port: 8088
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: trade-service
+tj:
+  swagger:
+    enable: true
+    enableResponseWrap: true
+    package-path: com.tianji.trade.controller
+    title: 天机学堂 - 交易中心接口文档
+    description: 该服务提供购物车、订单管理等功能
+    contact-name: eMaker Agent Showcase
+    contact-url: https://example.com
+    contact-email: maintainer@example.com
+    version: v1.0
+  jdbc:
+    database: tj_trade
+  auth:
+    resource:
+      enable: true
+      excludeLoginPaths:
+      - /order-details/enrollNum

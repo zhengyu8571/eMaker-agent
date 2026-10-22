@@ -1,0 +1,25 @@
+server:
+  port: 8093
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: data-service
+tj:
+  swagger:
+    enable: true
+    enableResponseWrap: true
+    package-path: com.tianji.data.controller
+    title: 天机学堂 - 数据中心接口文档
+    description: 该服务包含数据看板统计的功能
+    contact-name: eMaker Agent Showcase
+    contact-url: https://example.com
+    contact-email: maintainer@example.com
+    version: v1.0
+  jdbc:
+    database: tj_data
+  auth:
+    resource:
+      enable: true

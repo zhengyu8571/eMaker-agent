@@ -1,0 +1,12 @@
+**/.git
+**/.idea
+.env
+.env.*
+config/keys
+**/*.jks
+**/*.p12
+**/*.pfx
+**/*.pem
+**/*.key
+**/logs
+docs

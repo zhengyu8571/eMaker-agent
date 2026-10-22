@@ -1,0 +1,53 @@
+server:
+  port: 8084
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: media-service
+tj:
+  swagger:
+    enable: true
+    package-path: com.tianji.media.controller
+    title: 天机学堂 - 媒资中心接口文档
+    description: 该服务包含图片管理、媒资管理等
+    contact-name: eMaker Agent Showcase
+    contact-url: https://example.com
+    contact-email: maintainer@example.com
+    version: v1.0
+    enableResponseWrap: true
+  auth:
+    resource:
+      enable: true
+      excludeLoginPaths:
+      - /medias/signature/play
+  jdbc:
+    database: tj_media
+  platform:
+    file: TENCENT
+    media: TENCENT
+  ali:
+    accessId: ${SHOWCASE_TJ_ALI_ACCESSID}
+    accessKey: ${SHOWCASE_TJ_ALI_ACCESSKEY}
+    oss:
+      endpoint: ${ALI_OSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
+      bucket: ${ALI_OSS_BUCKET}
+  tencent:
+    appId: ${SHOWCASE_TJ_TENCENT_APPID}
+    secretId: ${SHOWCASE_TJ_TENCENT_SECRETID}
+    secretKey: ${SHOWCASE_TJ_TENCENT_SECRETKEY}
+    vod:
+      enable: true
+      vodValidSeconds: 7776000
+      region: ap-shanghai
+      procedure: wisehub-base
+      urlKey: ${SHOWCASE_TJ_TENCENT_VOD_URLKEY}
+      pfcg: basicDrmPreset
+    cos:
+      enable: true
+      region: ap-nanjing
+      bucket: ${SHOWCASE_TJ_TENCENT_COS_BUCKET}
+      multipartUploadThreshold: 5242880
+      minimumUploadPartSize: 1048576

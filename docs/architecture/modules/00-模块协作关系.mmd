@@ -1,0 +1,28 @@
+flowchart TD
+    BOOT["⚙️ 02 启动注册<br/>能力目录与技能目录"] -. 提供请求权限 .-> ENTRY
+    DOC["06 文档上传与异步入库"] --> INDEX[("关键词索引与向量索引")]
+    USER(["👤 用户提出问题"]) --> ENTRY["01 聊天入口与意图路由"]
+    ENTRY --> D["03 DIRECT<br/>业务模型按需调用"]
+    ENTRY --> P["08 PLAN<br/>模型生成计划并校验"]
+    P --> EXEC["09 Java 调度器<br/>依赖执行与字段绑定"]
+    D -. 能力请求 .-> RT["04 统一运行时<br/>鉴权、预算、超时、证据"]
+    EXEC --> RT
+    RT --> TOOLS["05 本地工具或 MCP"]
+    RT --> RAG["07 混合知识检索"]
+    INDEX -. 检索数据 .-> RAG
+    EXEC --> EVAL["10 目标评估与最终回答"]
+    EVAL -. 有限重规划 .-> P
+    D --> ANSWER["回答、来源与正式聊天历史"]
+    EVAL --> ANSWER
+    ANSWER --> MEM["11 后台摘要与用户偏好"]
+    STOP["12 停止、超时与可观测性"] -. 控制与观测 .-> RT
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class BOOT,D,EXEC,RT,TOOLS,RAG,ANSWER,MEM,STOP process
+    class ENTRY,P,EVAL model
+    class INDEX,DOC data
+    class USER decision

@@ -1,0 +1,43 @@
+flowchart TD
+    USER(["👤 使用者"]) --> GW["天机学堂网关与身份上下文"]
+    subgraph CORE["eMaker Agent 核心"]
+        ROUTE["意图路由与 Skill 选择"]
+        ROUTE --> DIRECT["DIRECT<br/>业务智能体与流式问答"]
+        ROUTE --> PLAN["PLAN<br/>生成计划与确定性校验"]
+        PLAN --> EXEC["Java 执行器<br/>依赖调度与字段绑定"]
+        DIRECT -. 按需调用 .-> RT["统一 AgentRuntime<br/>权限、预算、超时与取消"]
+        EXEC --> RT
+        RT --> LOCAL["本地工具适配"]
+        RT --> MCP["MCP 客户端与契约校验"]
+        RT --> RAG["混合 RAG<br/>改写、双路召回、融合与精排"]
+        EXEC --> EVAL["目标评估与有限重规划"]
+        EVAL -. 缺口反馈 .-> PLAN
+        EVAL --> FINAL["依据可信证据组织终答<br/>校验引用与来源"]
+        DIRECT --> OUT["SSE 结果与正式会话"]
+        FINAL --> OUT
+        OUT --> MEMORY["后台会话摘要与用户偏好"]
+    end
+    GW --> ROUTE
+    subgraph FRAMEWORK["天机学堂业务框架"]
+        BIZ["课程、搜索、交易、学习等服务"]
+    end
+    LOCAL --> BIZ
+    MCP --> REMOTE["已授权 MCP 课程工具"]
+    subgraph DATA["基础设施"]
+        INDEX[("Redis 向量索引与 ES 关键词索引")]
+        INGEST["OSS、RabbitMQ 与 MySQL<br/>文档上传、任务与异步入库"]
+        CHAT[("Redis 会话与增强记忆")]
+        NACOS["Nacos 注册、共享配置与提示词"]
+    end
+    INGEST --> INDEX
+    INDEX -. 检索材料 .-> RAG
+    MEMORY --> CHAT
+    NACOS -. 配置支持 .-> ROUTE
+    classDef app fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef store fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef entry fill:#FFF2CC,stroke:#997000,color:#594100
+    class ROUTE,PLAN,EVAL,FINAL model
+    class DIRECT,EXEC,RT,LOCAL,MCP,RAG,OUT,MEMORY,INGEST,NACOS app
+    class INDEX,CHAT,BIZ,REMOTE store
+    class USER,GW entry

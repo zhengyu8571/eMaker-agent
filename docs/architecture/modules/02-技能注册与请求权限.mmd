@@ -1,0 +1,29 @@
+flowchart TD
+    BOOT(["⚙️ 应用启动"]) --> PROVIDER["适配 Agent、本地工具、RAG 与已知 MCP<br/>提供描述、Schema 和 execute"]
+    PROVIDER --> CAP["CapabilityRegistry<br/>检查重复 key 与 Schema JSON 对象"]
+    CAP --> SCAN["SkillRegistry 扫描 skills 运行资源"]
+    SCAN --> PARSE["SkillParser<br/>解析说明、元数据与受限引用"]
+    PARSE --> CHECK{"能力引用、默认项<br/>Agent 与 MCP 范围合法"}
+    CHECK -->|"否"| DIAG["保留诊断<br/>无效技能不进入可用目录"]
+    CHECK -->|"是"| REG["建立技能目录与 Agent 默认技能映射"]
+    REG --> REQ(["👤 一次可信路由请求"])
+    REQ --> RESOLVE["resolve skillId 与 agentType<br/>未知或跨 Agent 技能回退默认"]
+    RESOLVE --> FILTER["CapabilityResolver.resolve<br/>按技能能力白名单裁剪"]
+    FILTER --> CROSS{"Agent 能力跨界<br/>或 MCP 服务未授权"}
+    CROSS -->|"是"| DENY["拒绝越权能力"]
+    CROSS -->|"否"| VIEW["ResolvedCapabilities<br/>本次运行专属能力视图"]
+    VIEW --> CONTEXT["AgentExecutionContextFactory.create"]
+    CONTEXT --> IDS["requestId、runId、sessionId、userId"]
+    CONTEXT --> CONTROL["AgentBudget、CancellationToken<br/>EvidenceCollector"]
+    IDS --> RUN["注册活动运行<br/>进入 DIRECT 或 PLAN"]
+    CONTROL --> RUN
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class PROVIDER,CAP,SCAN,PARSE,REG,RESOLVE,FILTER,CONTEXT,RUN process
+    class VIEW,IDS,CONTROL data
+    class CHECK,CROSS decision
+    class DIAG,DENY failure

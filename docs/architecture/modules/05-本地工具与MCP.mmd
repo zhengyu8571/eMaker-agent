@@ -1,0 +1,32 @@
+flowchart TD
+    START(["⚙️ 进入统一 Runtime 后"]) --> KIND{"能力类型"}
+    KIND -->|"本地工具"| LOCAL["LocalToolCapabilityAdapter<br/>显式身份写入 ToolContext"]
+    LOCAL --> TOOL["Spring AI 原始 ToolCallback"]
+    TOOL --> QUERY["CourseQueryService 查询课程<br/>或 OrderTools.prePlaceOrder"]
+    QUERY --> NORMAL["规范化为业务 output"]
+    KIND -->|"MCP 工具"| AUTH["McpCapabilityAdapter<br/>再次校验允许的 serverId"]
+    AUTH --> CLIENT["McpClientManager<br/>校验已配置的服务与工具白名单"]
+    CLIENT --> CONN{"已有可用连接"}
+    CONN -->|"否"| INIT["检查冷却期后懒初始化<br/>initialize 与分页 listTools"]
+    CONN -->|"是"| SCHEMA["比较远端 inputSchema<br/>与本地固定契约"]
+    INIT --> SCHEMA
+    SCHEMA --> SEND["MCP SDK callTool<br/>服务端只读课程搜索或详情"]
+    SEND --> RESULT{"isError 为否且<br/>单个 JSON 文本块、体积合法"}
+    RESULT -->|"是"| PARSE["解析 content 文本为 JSON<br/>去掉协议外壳"]
+    PARSE --> NORMAL
+    RESULT -->|"否"| FAIL["稳定失败<br/>不伪装为成功业务结果"]
+    SCHEMA -. 漂移或网络异常 .-> DROP["使旧连接失效并进入失败处理<br/>不自动切换本地工具"]
+    DROP --> FAIL
+    NORMAL --> OUTPUT["返回 output 与 metadata<br/>供 STEP_OUTPUT.courseId 绑定"]
+    OUTPUT --> RT["Runtime 记录证据并返回"]
+    FAIL --> RT
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class LOCAL,TOOL,QUERY,AUTH,CLIENT,INIT,SCHEMA,SEND,PARSE,NORMAL,RT process
+    class KIND,CONN,RESULT decision
+    class FAIL,DROP failure
+    class OUTPUT data

@@ -1,0 +1,8 @@
+displayName: 默认课程推荐
+default: true
+knowledge-base-keys: []
+allowed-tools:
+- queryCourseById
+allowed-mcp-servers: []
+reflection-enabled: false
+references: []

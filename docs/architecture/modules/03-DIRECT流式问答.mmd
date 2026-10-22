@@ -1,0 +1,34 @@
+flowchart TD
+    START(["👤 AbstractAgent.processStream"]) --> CHECK["校验 Skill、Agent、session 与上下文一致"]
+    CHECK --> RESERVE["顶层调用预扣步骤、模型与输入预算<br/>更新会话信息"]
+    RESERVE --> BUILD["构建系统提示 + Skill + 低信任增强记忆<br/>保留用户原始问题"]
+    BUILD --> AD["挂业务 Advisor 与正式聊天记忆 Advisor<br/>传当前身份和知识库范围"]
+    AD --> TYPE{"业务类型"}
+    TYPE -->|"知识讲解"| RAG["HybridKnowledgeAdvisor<br/>限定范围并调用 07 RAG"]
+    TYPE -->|"咨询、推荐、购买"| TOOLS["RuntimeToolCallbackFactory<br/>只暴露授权工具定义"]
+    RAG --> AVAILABLE{"上下文和来源可用"}
+    AVAILABLE -->|"否或检索异常"| REFUSE["固定资料不足提示<br/>手动保存一问一答"]
+    AVAILABLE -->|"是"| INJECT["追加资料到原系统消息<br/>保留 Skill 与记忆内容"]
+    INJECT --> MODEL["🧠 ChatClient.stream<br/>业务模型生成回答"]
+    TOOLS --> MODEL
+    MODEL -. 模型选择工具 .-> CALL["RuntimeToolCallback.call<br/>进入 04 / 05，结果返回模型"]
+    MODEL -. 流式执行异常 .-> CLEAN
+    CALL -. 工具结果 .-> MODEL
+    MODEL --> TOKEN["检查生成状态与输出预算<br/>累加已输出文本"]
+    REFUSE --> TOKEN
+    TOKEN --> DATA["发送 DATA 增量"]
+    DATA --> FINAL["正常结束：可选 PARAM 后发送 STOP"]
+    FINAL --> MEM["完整且未停止：recordCompleted<br/>进入 11 增强记忆"]
+    DATA -. 客户端取消 .-> PART["传播取消令牌<br/>保存已输出的助手部分文本"]
+    MEM --> CLEAN["doFinally 清理生成标记、临时参数<br/>冻结证据并移除活动运行"]
+    PART --> CLEAN
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class CHECK,RESERVE,BUILD,AD,RAG,TOOLS,INJECT,CALL,TOKEN,DATA,FINAL,MEM,CLEAN process
+    class MODEL model
+    class TYPE,AVAILABLE decision
+    class REFUSE,PART failure

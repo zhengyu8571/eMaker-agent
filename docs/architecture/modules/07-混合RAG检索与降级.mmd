@@ -1,0 +1,34 @@
+flowchart TD
+    IN(["📚 知识检索请求"]) --> VALID["校验问题非空与知识库范围非空"]
+    VALID --> REWRITE{"是否需要历史改写"}
+    REWRITE -->|"是"| MODEL["🧠 结合近期正式历史与可用摘要<br/>改写为独立检索问题"]
+    REWRITE -->|"否"| QUERY["normalizedQuery"]
+    MODEL --> QUERY
+    MODEL -. 失败 .-> FALLBACK["沿用原始问题"]
+    FALLBACK --> QUERY
+    QUERY --> SUBMIT["同时提交两个召回任务<br/>共用一个截止时间"]
+    SUBMIT --> VECTOR["查询向量化<br/>Redis 库范围过滤与相似度召回"]
+    SUBMIT --> BM25["Elasticsearch BM25<br/>正文、标题与章节关键词召回"]
+    VECTOR --> COLLECT["分别收集候选与耗时<br/>超时或异常只降级该路"]
+    BM25 --> COLLECT
+    COLLECT --> RRF["RrfFusion.fuse<br/>按排名融合并用 chunkId 去重"]
+    RRF --> RERANK["🧠 DashScope 精排候选"]
+    RERANK --> PRUNE["分数过滤与 Token 预算裁剪<br/>只为入选块生成来源编号"]
+    RERANK -. 关闭或失败 .-> RRFONLY["保留 RRF 排序，记精排降级"]
+    RRFONLY --> PRUNE
+    PRUNE --> RESULT["输出 chunks、sources 与 RetrievalTrace"]
+    RESULT --> OK{"块、来源与渲染正文可用"}
+    OK -->|"是且 DIRECT"| AD["Advisor 追加上下文<br/>资料与来源编号交业务模型"]
+    OK -->|"是且 PLAN"| EV["能力结果与可信来源进入证据<br/>供评估与终答使用"]
+    OK -->|"否或整体异常"| REFUSE["DIRECT 固定拒答<br/>PLAN 由步骤与目标评估判断缺口"]
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class VALID,QUERY,SUBMIT,VECTOR,BM25,COLLECT,RRF,PRUNE,AD process
+    class MODEL,RERANK model
+    class REWRITE,OK decision
+    class RESULT,EV data
+    class FALLBACK,RRFONLY,REFUSE failure

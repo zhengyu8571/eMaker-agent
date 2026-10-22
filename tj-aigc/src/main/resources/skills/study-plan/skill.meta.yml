@@ -1,0 +1,9 @@
+displayName: 综合学习规划
+default: false
+knowledge-base-keys: []
+allowed-tools:
+- searchCourseCandidate
+- queryCourseById
+allowed-mcp-servers: []
+reflection-enabled: false
+references: []

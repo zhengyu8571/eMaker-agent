@@ -1,0 +1,96 @@
+server:
+  port: 10010
+  tomcat:
+    uri-encoding: UTF-8
+tj:
+  ai:
+    mcp:
+      gateway:
+        enabled: false
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      routes:
+      - id: ms
+        uri: lb://media-service
+        predicates:
+        - Path=/ms/**
+      - id: as
+        uri: lb://auth-service
+        predicates:
+        - Path=/as/**
+        filters:
+        - PreserveHostHeader
+      - id: ds
+        uri: lb://data-service
+        predicates:
+        - Path=/ds/**
+      - id: sms
+        uri: lb://message-service
+        predicates:
+        - Path=/sms/**
+      - id: us
+        uri: lb://user-service
+        predicates:
+        - Path=/us/**
+      - id: cs
+        uri: lb://course-service
+        predicates:
+        - Path=/cs/**
+      - id: os
+        uri: lb://order-service
+        predicates:
+        - Path=/os/**
+      - id: ss
+        uri: lb://search-service
+        predicates:
+        - Path=/ss/**
+      - id: ls
+        uri: lb://learning-service
+        predicates:
+        - Path=/ls/**
+      - id: ps
+        uri: lb://pay-service
+        predicates:
+        - Path=/ps/**
+      - id: ts
+        uri: lb://trade-service
+        predicates:
+        - Path=/ts/**
+      - id: es
+        uri: lb://exam-service
+        predicates:
+        - Path=/es/**
+      - id: rs
+        uri: lb://remark-service
+        predicates:
+        - Path=/rs/**
+      - id: prs
+        uri: lb://promotion-service
+        predicates:
+        - Path=/prs/**
+      - id: ais
+        uri: lb://aigc-service
+        predicates:
+        - Path=/ais/**
+      default-filters:
+      - StripPrefix=1
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns:
+            - '*'
+            allowedMethods:
+            - GET
+            - POST
+            - DELETE
+            - PUT
+            - OPTIONS
+            allowedHeaders: '*'
+            allowCredentials: true
+            maxAge: 360000

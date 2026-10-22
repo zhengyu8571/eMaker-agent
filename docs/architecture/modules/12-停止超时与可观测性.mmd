@@ -1,0 +1,32 @@
+flowchart TD
+    USER(["👤 POST /ais/chat/stop"]) --> FLAG["generationStatusService.stop<br/>若 Runtime 开启，按 userId/sessionId 找运行"]
+    FLAG --> TOKEN["设置共享 CancellationToken"]
+    DISC["客户端断开 SSE"] --> MODE{"当前执行模式"}
+    MODE -->|"DIRECT"| DPART["取消上游响应流<br/>保存已输出助手部分文本"]
+    DPART --> TOKEN
+    MODE -->|"PLAN"| PCANCEL["取消令牌并 dispose 后台任务<br/>不补写未完成的正式问答"]
+    PCANCEL --> TOKEN
+    TOKEN --> CAP["Runtime 的 Future 等待检查<br/>取消能力 Future"]
+    TOKEN --> MODEL["PlanModelCallExecutor 每 100ms 检查<br/>取消等待与排队任务"]
+    TIME["运行总截止时间"] --> MODEL
+    TIME --> CAP
+    LIMIT["PLAN 模型单次等待上限"] --> MODEL
+    CAP --> STATE["步骤标记 CANCELLED 或 FAILED<br/>停止提交后续批次"]
+    MODEL --> SAFE["安全提示或 STOP<br/>取消后不生成与保存终答"]
+    STATE --> CLEAN["finally / doFinally<br/>清生成标记与临时工具结果"]
+    SAFE --> CLEAN
+    CLEAN --> FREEZE["冻结证据，移除活动 runId<br/>清理本轮状态与监听"]
+    TRACE["📝 调试开启时：REQUEST / ROUTING<br/>PLANNING / RAG / TOOL / MCP / FINAL"] -. 请求关联 .-> CHECK["同 callId 配对 INPUT 与 OUTPUT 或 ERROR<br/>用 seq 查看发生顺序"]
+    CHECK --> ASYNC["跨线程 scope 保留请求关联<br/>异步 MEMORY 可在 REQUEST 结束后追加"]
+    ASYNC --> REVIEW["核对真实输入、能力 output、证据<br/>最终文本、来源和正式历史"]
+    FREEZE -. 运行收尾 .-> REVIEW
+
+    classDef process fill:#E8F1FF,stroke:#245DA8,color:#16365D
+    classDef model fill:#EEE6FA,stroke:#7450A0,color:#432563
+    classDef decision fill:#FFF2CC,stroke:#997000,color:#594100
+    classDef data fill:#E2F0D9,stroke:#477A30,color:#24451B
+    classDef failure fill:#FCE4D6,stroke:#AA4B27,color:#682A12
+    class FLAG,TOKEN,PCANCEL,CAP,MODEL,STATE,SAFE,CLEAN,FREEZE,TRACE,CHECK,ASYNC,REVIEW process
+    class MODE decision
+    class DPART,TIME failure
+    class DISC data
